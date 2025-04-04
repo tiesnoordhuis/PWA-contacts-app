@@ -26,8 +26,8 @@ This repository serves as an educational example of building a Progressive Web A
 ## Development Setup
 
 1. **Local Server:**
-   ```bash
-   npx http-serve -p 6789
+   ```
+   npm start
    ```
 
 2. **Public Access:**
