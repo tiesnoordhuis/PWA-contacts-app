@@ -1,0 +1,14 @@
+#profilesContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    #profilesHeader, .profile, form#profileForm {
+        display: flex;
+
+        h2, img, input, button {
+            flex-basis: 0;
+            flex-grow: 1;
+        }
+    }
+}

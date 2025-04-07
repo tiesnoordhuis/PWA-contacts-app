@@ -11,6 +11,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="apple-touch-icon" href="circle.svg">
+    <link rel="stylesheet" href="css/style.css">
     <script type="importmap">
         {
           "imports": {
@@ -18,17 +19,39 @@
           }
         }
       </script>
+      <script type="module" src="js/script.js"></script>
 </head>
 <body>
-    <h1>PWA Camera Example</h1>
-    <p>Welcome to our PWA with MongoDB example.</p>
+    <h1>PWA Profiles Example</h1>
+    
+    <div id="profilesContainer">
+      <div id="profilesHeader">
+        <h2>Name</h2>
+        <h2>email</h2>
+        <h2>photo</h2>
+      </div>
+      <form action="" method="post" id="profileForm">
+        <input type="text" id="name" placeholder="Name" name="name" required>
+        <input type="email" id="email" placeholder="Email" name="email" required>
+        <input type="submit" value="Add Profile">
+      </form>
+    </div>
+    
+    <template id="profileTemplate">
+      <div class="profile">
+        <h2 class="name"></h2>
+        <h2 class="email"></h2>
+        <img class="photo" src="" alt="Profile Photo">
+      </div>
+    </template>
     
     <button id="startCamera">Start Camera</button>
     <button id="stopCamera">Stop Camera</button>
+    <button id="takePhoto">Take photo</button>
     <div id="errorMessage"></div>
 
     <video id="cameraFeed" autoplay playsinline></video>
+    <canvas id="photoCanvas" width="160" height="120"></canvas>
 
-    <script type="module" src="js/script.js"></script>
 </body>
 </html> 
