@@ -12,6 +12,10 @@ const urlsToCache = [
 ];
 
 const putInCache = async (request, response) => {
+    const url = new URL(request.url);
+    if (!url.protocol.startsWith("http")) {
+        return;
+    }
     const cache = await caches.open(CACHE_NAME);
     await cache.put(request, response);
 };

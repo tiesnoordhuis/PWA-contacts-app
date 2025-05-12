@@ -71,3 +71,17 @@ profiles.forEach(profile => {
     clone.querySelector('img.photo').src = profile.photo;
     document.getElementById('profilesContainer').appendChild(clone);
 })
+
+const loadContactButton = document.getElementById('loadContact');
+const contactsSupported = 'contacts' in navigator && 'ContactsManager' in window;
+const loadContact = async () => {
+    const contacts = await navigator.contacts.select(['name', 'email']);
+    document.getElementById('name').value = contacts[0]?.name[0] ?? '';
+    document.getElementById('email').value = contacts[0]?.email[0] ?? '';
+}
+
+if (contactsSupported) {
+    document.getElementById('loadContact').addEventListener('click', loadContact);
+} else {
+    loadContactButton.disabled = true;
+}
