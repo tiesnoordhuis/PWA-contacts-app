@@ -23,8 +23,8 @@ app.get('/api/profile', async (req, res) => {
 app.post('/api/profile', async (req, res) => {
     const collection = client.db('application_database').collection('profile');
     const newProfile = req.body;
-    await collection.insertOne(newProfile);
-    res.status(201).json(newProfile);
+    const result = await collection.insertOne(newProfile);
+    res.status(201).json(result);
 });
 
 app.listen(PORT, () => {
