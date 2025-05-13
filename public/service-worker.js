@@ -1,12 +1,11 @@
 const CACHE_NAME = "pwa-cache-v1";
 const urlsToCache = [
-    "/",
-    "/index.html",
-    "/js/script.js",
-    "/js/camera.js",
-    "/css/style.css",
-    "/circle.svg",
-    "/favicon.ico",
+    "index.html",
+    "js/script.js",
+    "js/camera.js",
+    "css/style.css",
+    "circle.svg",
+    "favicon.ico",
 ];
 
 const putInCache = async (request, response) => {
