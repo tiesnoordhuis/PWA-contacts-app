@@ -51,6 +51,7 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener('push', event => {
     const data = event.data?.json() || { title: 'Default title', body: 'Default body' };
+    console.log('Push event received:', data);
 
     event.waitUntil(
         self.registration.showNotification(data.title, {

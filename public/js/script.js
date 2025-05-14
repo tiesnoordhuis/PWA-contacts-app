@@ -129,3 +129,13 @@ if ('serviceWorker' in navigator) {
         console.error('Service Worker registration failed:', error);
     }
 }
+
+const testPushNotificationButton = document.getElementById('testPushNotification');
+testPushNotificationButton.addEventListener('click', async () => {
+    if (Notification.permission !== 'granted') {
+        await Notification.requestPermission();
+    }
+    const res = await fetch('/api/test-push');
+    const { sent, failed } = await res.json();
+    console.log(`Push notifications sent: ${sent}, failed: ${failed}`);
+});
