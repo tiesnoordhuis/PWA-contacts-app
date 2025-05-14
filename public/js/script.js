@@ -1,18 +1,5 @@
 import Camera from 'camera';
 
-// register service worker
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('service-worker.js')
-            .then(registration => {
-                console.log('Service Worker registered with scope:', registration.scope);
-            })
-            .catch(error => {
-                console.error('Service Worker registration failed:', error);
-            });
-    });
-}
-
 const camera = new Camera();
 const videoElement = document.getElementById('cameraFeed');
 const startButton = document.getElementById('startCamera');
@@ -84,4 +71,61 @@ if (contactsSupported) {
     document.getElementById('loadContact').addEventListener('click', loadContact);
 } else {
     loadContactButton.disabled = true;
+}
+
+const registerForPush = async (registration) => {
+    try {
+        const res = await fetch('/api/applicationServerKey');
+        const { applicationServerKey } = await res.json();
+        const convertedVapidKey = urlBase64ToUint8Array(applicationServerKey);
+
+        const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: convertedVapidKey
+        });
+
+        await fetch('/api/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(subscription)
+        });
+
+        console.log('Push subscription successful:', subscription);
+    } catch (err) {
+        console.error('Push subscription failed:', err);
+    }
+};
+
+// Utility to convert base64 string to Uint8Array (required for VAPID key)
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+        .replace(/-/g, '+')
+        .replace(/_/g, '/');
+    
+    const rawData = atob(base64);
+    return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+}
+
+// register service worker
+if ('serviceWorker' in navigator) {
+    try {
+        const registration = await navigator.serviceWorker.register('service-worker.js')
+        console.log('Service Worker registered with scope:', registration.scope);
+        console.log('Service Worker status:', registration.active);
+        registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing ?? registration.waiting;
+            newWorker.addEventListener('statechange', () => {
+                console.log('Service Worker stateChange', newWorker.state);
+                if (newWorker.state === 'activated') {
+                    registerForPush(registration);
+                    console.log('New Service Worker activated');
+                }
+            });
+        });
+    } catch (error) {
+        console.error('Service Worker registration failed:', error);
+    }
 }
