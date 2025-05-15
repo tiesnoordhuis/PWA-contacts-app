@@ -15,29 +15,32 @@
     <script type="importmap">
         {
           "imports": {
-            "camera": "./js/camera.js"
+            "camera": "./js/camera.js",
+            "cameraUI": "./js/cameraUI.js",
+            "profileService": "./js/profileService.js",
+            "profileUI": "./js/profileUI.js",
+            "push": "./js/push.js"
           }
         }
       </script>
       <script type="module" src="js/script.js"></script>
 </head>
 <body>
-    <h1>PWA Profiles Example</h1>
+    <h1>PWA Profiles Example <a href="mobile-debug.html">debug</a></h1>
     
     <button id="testPushNotification">Test Push Notification</button>
     <button id="loadContact">Load Contact</button>
-    <pre id="debug"></pre>
+    <form action="" method="post" id="profileForm">
+      <input type="text" id="name" placeholder="Name" name="name" required>
+      <input type="email" id="email" placeholder="Email" name="email" required>
+      <input type="submit" value="Add Profile">
+    </form>
     <div id="profilesContainer">
       <div id="profilesHeader">
         <h2>Name</h2>
         <h2>email</h2>
         <h2>photo</h2>
       </div>
-      <form action="" method="post" id="profileForm">
-        <input type="text" id="name" placeholder="Name" name="name" required>
-        <input type="email" id="email" placeholder="Email" name="email" required>
-        <input type="submit" value="Add Profile">
-      </form>
     </div>
     
     <template id="profileTemplate">
