@@ -21,7 +21,7 @@ const activatePushNotificationButton = document.getElementById('activatePushNoti
 const setupPushNotifications = async (registration) => {
     const push = new Push(registration);
     debugElement.textContent += 'Push notifications supported. \n';
-    activatePushNotificationButton.addEventListener('click', push.subscribe.bind(push));
+    activatePushNotificationButton.addEventListener('click', () => push.subscribe());
 }
 
 const serviceWorkerCleanupFunctions = [];
