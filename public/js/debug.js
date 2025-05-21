@@ -1,4 +1,5 @@
 import ContactSelect from "contactSelect";
+import Push from "push";
 import { registerServiceWorker, unregisterServiceWorker } from "serviceWorkerService";
 
 new ContactSelect().init();
@@ -16,9 +17,16 @@ if ('getBattery' in navigator) {
     });
 }
 
+const activatePushNotificationButton = document.getElementById('activatePushNotification');
+const setupPushNotifications = async (registration) => {
+    const push = new Push(registration);
+    debugElement.textContent += 'Push notifications supported. \n';
+    activatePushNotificationButton.addEventListener('click', push.subscribe.bind(push));
+}
+
 const serviceWorkerCleanupFunctions = [];
 try {
-    serviceWorkerCleanupFunctions.push(await registerServiceWorker({debug: true}))
+    serviceWorkerCleanupFunctions.push(await registerServiceWorker(setupPushNotifications, {debug: true}))
 } catch (error) {
     debugElement.textContent += 'Service Worker not supported in this browser. \n';
 }
@@ -38,5 +46,5 @@ unRegisterButton.addEventListener('click', async () => {
 const registerButton = document.getElementById('registerServiceWorker');
 registerButton.addEventListener('click', async () => {
     debugElement.textContent += 'Trying to register Service Worker. \n';
-    serviceWorkerCleanupFunctions.push(await registerServiceWorker({debug: true}));
+    serviceWorkerCleanupFunctions.push(await registerServiceWorker(setupPushNotifications, {debug: true}));
 });

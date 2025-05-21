@@ -7,18 +7,51 @@ export default class Push {
         if (!this.testPushNotificationButton) {
             throw new Error('Test Push Notification button not found');
         }
-        if (!serviceWorkerRegistration.pushManager) {
+        this.testPushNotificationButton.addEventListener('click', this.testPushNotification);
+        this.pushManager = serviceWorkerRegistration.pushManager;
+        if (!this.pushManager) {
             throw new Error('Service Worker Push Manager not available');
         }
-        this.pushManager = serviceWorkerRegistration.pushManager;
+        if (!("Notification" in window)) {
+            throw new Error('Push notifications not supported in this browser');
+        }
     }
 
-    async init() {
-        if (Notification.permission !== 'granted') {
-            await Notification.requestPermission();
+    async requestNotificationPermission() {
+        try {
+            const permission = await Notification.requestPermission();
+            console.log('Notification permission:', permission);
+            const permissionState = await this.pushManager.permissionState({
+                userVisibleOnly: true
+            });
+            console.log('Notification permission state:', permissionState);
+            return (permission === 'granted' && permissionState === 'granted')
+        } catch (error) {
+            console.error('Error requesting Push notification permission:', error);
+            return false;
         }
-        this.registerForPush();
-        this.testPushNotificationButton.addEventListener('click', this.testPushNotification);
+    }
+
+    async subscribe() {
+        const permissionGranted = await this.requestNotificationPermission();
+        if (!permissionGranted) {
+            console.error('Push notifications are not granted');
+            return;
+        }
+
+        const subscription = await this.pushManager.getSubscription();
+        if (subscription) {
+            console.log('Already subscribed to push notifications');
+            return subscription;
+        }
+
+        try {
+            const newSubscription = await this.registerForPush();
+            console.log('Successfully subscribed to push notifications:', newSubscription);
+            return newSubscription;
+        } catch (error) {
+            console.error('Failed to subscribe to push notifications:', error);
+        }
     }
 
     async getServerPublicVAPIDKey() {
@@ -29,6 +62,7 @@ export default class Push {
         const { applicationServerKey } = await res.json();
         return Push.urlBase64ToUint8Array(applicationServerKey);
     }
+
     async registerForPush() {
         const serverPublicVAPIDKey = await this.getServerPublicVAPIDKey();
 

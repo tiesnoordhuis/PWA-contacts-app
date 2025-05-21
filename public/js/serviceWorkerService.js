@@ -1,7 +1,5 @@
-import Push from 'push';
-
 // Registers the Service Worker and returns a cleanup function.
-async function registerServiceWorker({debug = false} = {}) {
+async function registerServiceWorker(activationCallback = () => {}, {debug = false} = {}) {
     if (!('serviceWorker' in navigator)) {
         throw new Error('Service Workers not supported');
     }
@@ -14,6 +12,12 @@ async function registerServiceWorker({debug = false} = {}) {
     let registration;
     try {
         registration = await navigator.serviceWorker.register(url, { scope: '/' });
+        // Check if the Service Worker is unchanged and controlling the page.
+        if (registration.active) {
+            activationCallback(registration);
+        } else {
+            console.log('Service Worker registered, waiting for activation...');
+        }
     } catch (err) {
         console.error('Service Worker registration failed:', err);
         throw err;
@@ -21,7 +25,7 @@ async function registerServiceWorker({debug = false} = {}) {
 
     const handleStateChange = (event) => {
         if (event.target.state === 'activated') {
-            new Push(registration).init();
+            activationCallback(registration);
         }
     };
 

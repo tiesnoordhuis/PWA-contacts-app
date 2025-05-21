@@ -92,6 +92,17 @@ app.get('/api/test-push', async (req, res) => {
     }
 });
 
+app.delete('/api/unregister-all', async (req, res) => {
+    try {
+        const collection = client.db('application_database').collection('subscriptions');
+        await collection.deleteMany({});
+        res.status(200).json({ message: 'All subscriptions removed' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to remove subscriptions' });
+    }
+});
+
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
