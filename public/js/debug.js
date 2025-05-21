@@ -1,67 +1,42 @@
-import Push from "push";
+import ContactSelect from "contactSelect";
+import { registerServiceWorker, unregisterServiceWorker } from "serviceWorkerService";
+
+new ContactSelect().init();
 
 const debugElement = document.getElementById('debugElement');
 
 debugElement.textContent = 'Debug log: \n';
 
-const registerServiceWorker = async () => {
-    const registration = await navigator.serviceWorker.register('service-worker.js')
-    registration.addEventListener('updatefound', () => {
-        registration.installing?.addEventListener('statechange', (event) => {
-            if (event.target.state === 'activated') {
-                new Push(registration).init();
-            }
+if ('getBattery' in navigator) {
+    navigator.getBattery().then(battery => {
+        debugElement.textContent += `Battery level: ${battery.level * 100}% \n`;
+        battery.addEventListener('levelchange', () => {
+            debugElement.textContent += `Battery level changed: ${battery.level * 100}% \n`;
         });
     });
-
-    registration.addEventListener('updatefound', (event) => {
-        const state = event.target.active ? event.target.active.state : event.target.installing ? event.target.installing.state : event.target.waiting ? event.target.waiting.state : 'unknown';
-        debugElement.textContent += `Service Worker registration update found with event target type [${event.target.constructor.name}] and state [${state}] \n`;
-        const worker = registration.installing ?? registration.waiting ?? registration.active;
-        if (worker) {
-            worker.addEventListener('statechange', (event) => {
-                debugElement.textContent += `Service Worker state changed with target type [${event.target.constructor.name}] and state [${event.target.state ?? worker.state}] \n`;
-            });
-        }
-    });
-
-    navigator.serviceWorker.addEventListener('message', event => {
-        const { type, payload } = event.data;
-        const time = new Date().toLocaleTimeString();
-        debugElement.textContent += `[${time}] ${type}: ${payload.message} \n`;
-    })
-
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-        debugElement.textContent += 'Service Worker controller changed. \n';
-    })
 }
 
-// register service worker
-if ('serviceWorker' in navigator) {
-    registerServiceWorker()
-} else {
+const serviceWorkerCleanupFunctions = [];
+try {
+    serviceWorkerCleanupFunctions.push(await registerServiceWorker({debug: true}))
+} catch (error) {
     debugElement.textContent += 'Service Worker not supported in this browser. \n';
 }
 
 const unRegisterButton = document.getElementById('unregisterServiceWorker');
 
 unRegisterButton.addEventListener('click', async () => {
-    const registration = await navigator.serviceWorker.getRegistration();
-    if (registration) {
-        await registration.unregister();
+    serviceWorkerCleanupFunctions.forEach(cleanup => cleanup());
+    try {
+        unregisterServiceWorker();
         debugElement.textContent += 'Service Worker unregistered. \n';
-    } else {
+    } catch (error) {
         debugElement.textContent += 'No Service Worker registered. \n';
     }
 });
 
 const registerButton = document.getElementById('registerServiceWorker');
 registerButton.addEventListener('click', async () => {
-    const registration = await navigator.serviceWorker.getRegistration();
-    if (registration) {
-        debugElement.textContent += 'Service Worker already registered. \n';
-    } else {
-        registerServiceWorker();
-        debugElement.textContent += 'Service Worker registered. \n';
-    }
+    debugElement.textContent += 'Trying to register Service Worker. \n';
+    serviceWorkerCleanupFunctions.push(await registerServiceWorker({debug: true}));
 });

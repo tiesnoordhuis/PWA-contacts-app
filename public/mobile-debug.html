@@ -15,15 +15,20 @@
     <script type="importmap">
         {
             "imports": {
-                "push": "./js/push.js"
+                "push": "./js/push.js",
+                "contactSelect": "./js/contactSelect.js",
+                "serviceWorkerService": "./js/serviceWorkerService.js"
             }
         }
     </script>
-    <script type="module" src="js/debug.js"></script>
+    <script type="module" src="js/debug.js" ></script>
 </head>
 <body>
     <h1>PWA mobile debugger</h1>
     
+    <button id="loadContact">Load Contact</button>
+    <input type="text" id="name" placeholder="Name" name="name">
+    <input type="email" id="email" placeholder="Email" name="email">
     <button id="testPushNotification">Test Push Notification</button>
     <button id="unregisterServiceWorker">Unregister Service Worker</button>
     <button id="registerServiceWorker">Register Service Worker</button>

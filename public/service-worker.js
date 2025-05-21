@@ -8,13 +8,18 @@ const urlsToCache = [
     "favicon.ico",
 ];
 
+self.isDev = new URL(self.location.href).searchParams.get('debug') === 'true';
+
 const putInCache = async (request, response) => {
-    const url = new URL(request.url);
-    if (!url.protocol.startsWith("http") || request.method !== "GET") {
+    if (request.method !== "GET") {
         return;
     }
-    const cache = await caches.open(CACHE_NAME);
-    await cache.put(request, response);
+    try {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(request, response);
+    } catch (error) {
+        console.log("request cannot be cached", request, error);
+    }
 };
 
 const networkFirst = async (request) => {
@@ -46,7 +51,27 @@ self.addEventListener("install", async (event) => {
         const cache = await caches.open(CACHE_NAME);
         return cache.addAll(urlsToCache);
     }
-    event.waitUntil(preCache());
+    const skipIfDev = async () => {
+        if (self.isDev) {
+            console.log("isDev Service Worker: skip waiting");
+            return self.skipWaiting();
+        }
+    }
+
+    event.waitUntil(Promise.all([
+        preCache(),
+        skipIfDev(),
+    ]));
+});
+
+self.addEventListener("activate", async (event) => {
+    event.waitUntil(async () => {
+        if (self.isDev) {
+            console.log("isDev Service Worker: claim clients");
+            return self.clients.claim();
+        }
+        console.log("Service Worker: activate event");
+    })
 });
 
 self.addEventListener('push', event => {
@@ -58,57 +83,4 @@ self.addEventListener('push', event => {
             body: data.body,
         })
     );
-});
-
-// Utility function to send messages to clients
-async function broadcastMessage(type, message) {
-    const clients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
-    console.log(`[${type}] ${clients.length} clients`, clients);
-    clients.forEach(client => {
-        client.postMessage({
-            type,
-            payload: { message },
-        });
-    });
-}
-
-self.addEventListener('install', async () => {
-    console.log('Service Worker: install event');
-    await broadcastMessage('SW_INSTALLING', 'Service Worker is installing and caching resources.');
-});
-
-self.addEventListener('activate', async () => {
-    console.log('Service Worker: activate event');
-    await broadcastMessage('SW_ACTIVATED', 'Service Worker is activated and ready to handle requests.');
-});
-
-self.addEventListener('fetch', async (event) => {
-    console.log('Service Worker: fetch event', event.request.url);
-    await broadcastMessage('SW_FETCH', `Fetching: ${event.request.url}`);
-});
-
-self.addEventListener('push', async (event) => {
-    const data = event.data?.text() || 'No payload';
-    console.log('Service Worker: push event', data);
-    await broadcastMessage('SW_PUSH', `Push event received: ${data}`);
-});
-
-self.addEventListener('notificationclick', async (event) => {
-    console.log('Service Worker: notification click', event.notification.data);
-    await broadcastMessage('SW_NOTIFICATION_CLICK', `Notification clicked: ${event.notification.data}`);
-});
-
-self.addEventListener('notificationclose', async (event) => {
-    console.log('Service Worker: notification close', event.notification.data);
-    await broadcastMessage('SW_NOTIFICATION_CLOSE', `Notification closed: ${event.notification.data}`);
-});
-
-self.addEventListener('message', async (event) => {
-    console.log('Service Worker: message event', event.data);
-    await broadcastMessage('SW_MESSAGE', `Message received from client: ${event.data}`);
-});
-
-self.addEventListener('sync', async (event) => {
-    console.log('Service Worker: sync event', event.tag);
-    await broadcastMessage('SW_SYNC', `Background sync event: ${event.tag}`);
 });
