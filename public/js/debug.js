@@ -1,5 +1,5 @@
 import ContactSelect from "contactSelect";
-import Push from "push";
+import PushNotificationMangager from "pushNotificationManager";
 import { registerServiceWorker, unregisterServiceWorker } from "serviceWorkerService";
 
 new ContactSelect().init();
@@ -17,34 +17,55 @@ if ('getBattery' in navigator) {
     });
 }
 
-const activatePushNotificationButton = document.getElementById('activatePushNotification');
-const setupPushNotifications = async (registration) => {
-    const push = new Push(registration);
-    debugElement.textContent += 'Push notifications supported. \n';
-    activatePushNotificationButton.addEventListener('click', () => push.subscribe());
-}
-
-const serviceWorkerCleanupFunctions = [];
-try {
-    serviceWorkerCleanupFunctions.push(await registerServiceWorker(setupPushNotifications, {debug: true}))
-} catch (error) {
-    debugElement.textContent += 'Service Worker not supported in this browser. \n';
-}
+let serviceWorkerRegistration
 
 const unRegisterButton = document.getElementById('unregisterServiceWorker');
-
 unRegisterButton.addEventListener('click', async () => {
-    serviceWorkerCleanupFunctions.forEach(cleanup => cleanup());
+    debugElement.textContent += 'Trying to unregister Service Worker. \n';
     try {
         unregisterServiceWorker();
         debugElement.textContent += 'Service Worker unregistered. \n';
     } catch (error) {
-        debugElement.textContent += 'No Service Worker registered. \n';
+        debugElement.textContent += `Error unregistering Service Worker: ${error.message} \n`;
     }
 });
 
 const registerButton = document.getElementById('registerServiceWorker');
 registerButton.addEventListener('click', async () => {
     debugElement.textContent += 'Trying to register Service Worker. \n';
-    serviceWorkerCleanupFunctions.push(await registerServiceWorker(setupPushNotifications, {debug: true}));
+    try {
+        serviceWorkerRegistration = await registerServiceWorker();
+        debugElement.textContent += 'Service Worker registered successfully. \n';
+    } catch (error) {
+        debugElement.textContent += `Error registering Service Worker: ${error.message} \n`;
+    }
+});
+
+const activatePushNotificationButton = document.getElementById('activatePushNotification');
+activatePushNotificationButton.addEventListener('click', async () => {
+    if (!serviceWorkerRegistration) {
+        debugElement.textContent += 'Service Worker not registered. Please register it first. \n';
+        return;
+    }
+    debugElement.textContent += 'Trying to activate Push Notifications. \n';
+    try {
+        const pushNotificationManager = new PushNotificationMangager(serviceWorkerRegistration);
+        await pushNotificationManager.subscribe();
+        debugElement.textContent += 'Push Notifications activated successfully. \n';
+    } catch (error) {
+        debugElement.textContent += `Error activating Push Notifications: ${error.message} \n`;
+    }
+});
+
+const testPushNotificationButton = document.getElementById('testPushNotification');
+testPushNotificationButton.addEventListener('click', async () => {
+    try {
+        const response = await fetch('/api/test-push');
+        if (!response.ok) {
+            throw new Error('Failed to send test push notification');
+        }
+        debugElement.textContent += 'Test Push Notification sent successfully. \n';
+    } catch (error) {
+        debugElement.textContent += `Error sending test Push Notification: ${error.message} \n`;
+    }
 });

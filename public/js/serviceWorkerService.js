@@ -1,5 +1,5 @@
-// Registers the Service Worker and returns a cleanup function.
-async function registerServiceWorker(activationCallback = () => {}, {debug = false} = {}) {
+// Registers the Service Worker
+async function registerServiceWorker({ debug = false, scope = '/', timeout = 10_000 } = {}) {
     if (!('serviceWorker' in navigator)) {
         throw new Error('Service Workers not supported');
     }
@@ -9,37 +9,45 @@ async function registerServiceWorker(activationCallback = () => {}, {debug = fal
         url.searchParams.set('debug', 'true');
     }
 
-    let registration;
-    try {
-        registration = await navigator.serviceWorker.register(url, { scope: '/' });
-        // Check if the Service Worker is unchanged and controlling the page.
-        if (registration.active) {
-            activationCallback(registration);
-        } else {
-            console.log('Service Worker registered, waiting for activation...');
-        }
-    } catch (err) {
-        console.error('Service Worker registration failed:', err);
-        throw err;
+    const registration = await navigator.serviceWorker.register(url, { scope });
+    if (registration.active) {
+        return registration;
     }
+    
+    let worker = registration.installing ?? registration.waiting;
+    await new Promise((resolve, reject) => {
+        const handleStateChange = (event) => {
+            if (event.target.state === 'activated') {
+                worker.removeEventListener('statechange', handleStateChange);
+                clearTimeout(timer);
+                resolve();
+            }
+        };
 
-    const handleStateChange = (event) => {
-        if (event.target.state === 'activated') {
-            activationCallback(registration);
+        const handleUpdateFound = (event) => {
+            if (event.target.installing) {
+                worker = registration.installing;
+                worker.addEventListener('statechange', handleStateChange);
+                registration.removeEventListener('updatefound', handleUpdateFound);
+            }
         }
-    };
 
-    const handleUpdateFound = () => {
-        registration.installing?.addEventListener('statechange', handleStateChange);
-    };
+        if (worker?.state === 'activated') {
+            resolve();
+        } else if (worker) {
+            worker.addEventListener('statechange', handleStateChange);
+        } else {
+            registration.addEventListener('updatefound', handleUpdateFound);
+        }
 
-    registration.addEventListener('updatefound', handleUpdateFound);
+        const timer = setTimeout(() => {
+            worker?.removeEventListener('statechange', handleStateChange);
+            registration.removeEventListener('updatefound', handleUpdateFound);
+            reject(new Error('Service Worker activation timed out'));
+        }, timeout);
+    })
 
-    // Cleanup function to remove listeners.
-    return () => {
-        registration.removeEventListener('updatefound', handleUpdateFound);
-        registration.installing?.removeEventListener('statechange', handleStateChange);
-    };
+    return registration;
 }
 
 // Unregister the Service Worker.

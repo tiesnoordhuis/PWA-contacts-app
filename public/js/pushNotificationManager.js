@@ -1,13 +1,7 @@
-export default class Push {
+export default class PushNotificationMangager {
     constructor(
         serviceWorkerRegistration,
-        testPushNotificationButtonId = 'testPushNotification',
     ) {
-        this.testPushNotificationButton = document.getElementById(testPushNotificationButtonId);
-        if (!this.testPushNotificationButton) {
-            throw new Error('Test Push Notification button not found');
-        }
-        this.testPushNotificationButton.addEventListener('click', this.testPushNotification);
         this.pushManager = serviceWorkerRegistration.pushManager;
         if (!this.pushManager) {
             throw new Error('Service Worker Push Manager not available');
@@ -46,7 +40,7 @@ export default class Push {
         }
 
         try {
-            const newSubscription = await this.registerForPush();
+            const newSubscription = await this.registerForPushNotifications();
             console.log('Successfully subscribed to push notifications:', newSubscription);
             return newSubscription;
         } catch (error) {
@@ -60,10 +54,10 @@ export default class Push {
             throw new Error('Failed to fetch VAPID key');
         }
         const { applicationServerKey } = await res.json();
-        return Push.urlBase64ToUint8Array(applicationServerKey);
+        return PushNotificationMangager.urlBase64ToUint8Array(applicationServerKey);
     }
 
-    async registerForPush() {
+    async registerForPushNotifications() {
         const serverPublicVAPIDKey = await this.getServerPublicVAPIDKey();
 
         const subscription = await this.pushManager.subscribe({
@@ -88,11 +82,5 @@ export default class Push {
 
         const rawData = atob(base64);
         return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
-    }
-
-    testPushNotification = async () => {
-        const res = await fetch('/api/test-push');
-        const { sent, failed } = await res.json();
-        console.log(`Push notifications sent: ${sent}, failed: ${failed}`);
     }
 }
